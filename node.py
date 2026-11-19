@@ -38,6 +38,7 @@ class Node:
         # Events used to wait for replies from other threads
         self.ok_event = threading.Event()       # set when an OK arrives
         self.iwon_event = threading.Event()     # set when an IWON arrives
+        self.iaa_event = threading.Event()      # set when an IAA arrives
         self.iaa_from = set()       # higher nodes that answered IAA this round
         self.alive_higher = set()   # higher nodes that answered last round      # set when an IAA arrives
 
@@ -120,6 +121,7 @@ class Node:
         elif mtype == "IAA":
             with self.lock:
                 self.iaa_from.add(sender)
+            self.iaa_event.set()
 
         elif mtype == "ELECTION":
             self.log(f"<- Node {sender}: ELECTION")
@@ -159,6 +161,8 @@ class Node:
             if coord == self.id or busy:
                 continue  # coordinator doesn't ping itself; don't ping during an election
 
+            with self.lock:
+                self.iaa_from.clear()
             self.iaa_event.clear()
             delivered = self.send(coord, "AYA")
             alive = delivered and self.iaa_event.wait(IAA_TIMEOUT)
