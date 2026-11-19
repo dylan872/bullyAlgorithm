@@ -38,7 +38,8 @@ class Node:
         # Events used to wait for replies from other threads
         self.ok_event = threading.Event()       # set when an OK arrives
         self.iwon_event = threading.Event()     # set when an IWON arrives
-        self.iaa_event = threading.Event()      # set when an IAA arrives
+        self.iaa_from = set()       # higher nodes that answered IAA this round
+        self.alive_higher = set()   # higher nodes that answered last round      # set when an IAA arrives
 
         self.running = True
 
@@ -117,7 +118,8 @@ class Node:
             self.send(sender, "IAA")
 
         elif mtype == "IAA":
-            self.iaa_event.set()
+            with self.lock:
+                self.iaa_from.add(sender)
 
         elif mtype == "ELECTION":
             self.log(f"<- Node {sender}: ELECTION")
